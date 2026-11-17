@@ -1,0 +1,40 @@
+// Prisma schema —— 数据库结构的唯一事实来源
+// 改完这里，执行 pnpm db:migrate 生成迁移 + 同步表结构
+
+generator client {
+  provider = "prisma-client-js"
+  // 故意不写 binaryTargets：
+  // .dockerignore 排除了 node_modules，容器里会重新 prisma generate，
+  // 此时 "native" 自动解析成 linux-musl-openssl-3.0.x，正好是 alpine 要的引擎。
+  // 硬写目标平台反而会让镜像多塞一个没用的 Windows 引擎（约 21MB）。
+  // 前提是基础镜像装了 openssl —— 见 server/Dockerfile 的 apk add。
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique @db.VarChar(120)
+  password  String   @db.VarChar(100) // 存的是 bcrypt 哈希，不是明文
+  name      String   @db.VarChar(60)
+  createdAt DateTime @default(now())
+  records   Record[]
+}
+
+model Record {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   @db.VarChar(120) // 取自作文开头，列表页只显示这个
+  essay     String   @db.Text
+  review    String   @db.Text
+  score     Int? // 解析失败时为 null，这是有意的设计
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 列表查询是 where userId + order by createdAt desc，所以建这个联合索引
+  @@index([userId, createdAt])
+}

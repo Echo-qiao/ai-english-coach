@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+
+# 编辑器
+.idea/
+.vscode/
+
+# 本地缓存（安装依赖时用）
+.npm-cache/
+.pnpm-store/
+
+# 仅本地使用的笔记与存档，不纳入版本控制
+AGENTS.md
+docs/对话存档*.md
